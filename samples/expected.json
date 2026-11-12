@@ -1,0 +1,23 @@
+{
+  "_comment": "Answer key for samples/demo-transcript-ru.txt, used by scripts/compare-models.ts. Matching is by keywords (lowercase, ё→е).",
+  "decisions": [
+    { "id": "D1", "keywords": ["ролик"] },
+    { "id": "D2", "keywords": ["смен", "декабр"] }
+  ],
+  "commitments": [
+    { "id": "C1", "owner": ["ирин", "белов", "производств"], "action": ["брак"], "deadline": "20 ноября" },
+    { "id": "C2", "owner": ["андре", "ковал", "склад"], "action": ["инвентаризац"], "deadline": "пятниц" },
+    { "id": "C3", "owner": ["серге", "лебед", "it"], "action": ["выгрузк"], "deadline": null },
+    { "id": "C4", "owner": ["марин", "орлов", "продаж"], "action": ["коммерческ", "предложени"], "deadline": "сред" }
+  ],
+  "needs_clarification": [
+    { "id": "N1", "keywords": ["памятк"], "missing": ["owner"] },
+    { "id": "N2", "keywords": ["складского учета", "систем"], "missing": ["owner"] },
+    { "id": "N3", "keywords": ["сервисн", "договор"], "missing": ["agreement"] }
+  ],
+  "open_questions": [
+    { "id": "O1", "keywords": ["срочн"] },
+    { "id": "O2", "keywords": ["ламинатор"] }
+  ],
+  "must_not_be_commitments": ["памятк", "складского учета", "сервисн"]
+}

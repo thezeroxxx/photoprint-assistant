@@ -1,0 +1,57 @@
+/* Design tokens — approved light-glass palette. Text pairs were checked for WCAG AA (≥ 4.5:1). */
+:root {
+  /* Background */
+  --bg-1: #f5f9fd;
+  --bg-2: #eef5fb;
+  --bg-3: #eef8f5;
+  --circle-lavender: #cdb8ff;
+  --circle-sky: #a9dbff;
+  --circle-mint: #b5f0da;
+  --circle-blue: #bfd4ff;
+  --circle-mint-2: #c9f5e6;
+
+  /* Glass */
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-strong: rgba(255, 255, 255, 0.88); /* report cards: reading comfort first */
+  --glass-bar: rgba(255, 255, 255, 0.78);
+  --glass-fallback: rgba(255, 255, 255, 0.94);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --hairline: rgba(28, 60, 110, 0.08);
+  --blur: blur(18px) saturate(160%);
+
+  /* Text */
+  --text: #1c2433;
+  --text-2: #4b5668;
+  --text-3: #647086;
+
+  /* Accents */
+  --blue: #2f6fe4;
+  --blue-2: #1f74c9;
+  --blue-text: #2a62d3;
+  --blue-tint: #e6f0ff;
+  --sky: #5aa2ff;
+  --mint: #3dd6a6;
+  --mint-text: #0b7352;
+  --mint-tint: #e0f7ef;
+  --lavender: #b39dff;
+  --lavender-text: #6a50d4;
+  --lavender-tint: #f1edfe;
+
+  /* Status */
+  --amber-text: #9a5800;
+  --amber-tint: #fff3df;
+  --amber-border: #f3d6a2;
+  --error-text: #b8382b;
+  --error-tint: #fdecea;
+
+  /* Shape */
+  --r-card: 22px;
+  --r-inner: 14px;
+  --r-btn: 14px;
+  --shadow: 0 10px 30px rgba(40, 90, 160, 0.08), 0 1px 2px rgba(40, 90, 160, 0.05);
+  --shadow-hover: 0 14px 38px rgba(40, 90, 160, 0.12), 0 1px 2px rgba(40, 90, 160, 0.06);
+  --focus: 0 0 0 4px rgba(47, 111, 228, 0.18);
+
+  /* Type */
+  --font: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
