@@ -1309,3 +1309,29 @@ a {
     top: 68px;
   }
 }
+.rec-hint--wait {
+  color: var(--primary-text);
+}
+.level {
+  display: inline-block;
+  width: 80px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  overflow: hidden;
+  vertical-align: middle;
+}
+.level__bar {
+  display: block;
+  height: 100%;
+  background: var(--ok);
+  transition: width 0.08s linear;
+}
+.rec-silent {
+  color: var(--warn);
+  font-weight: 700;
+}
+.rec-hint {
+  flex-wrap: wrap;
+  justify-content: center;
+}

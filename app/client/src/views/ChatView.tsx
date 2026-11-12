@@ -9,7 +9,7 @@ import { BrandMark } from "../components/ui.tsx";
 import { MeetingCard } from "../components/MeetingCard.tsx";
 import { TaskCard } from "../components/TaskCard.tsx";
 import { formatDateTime } from "../lib/format.ts";
-import { recordingSupported, useRecorder } from "../lib/useRecorder.ts";
+import { useRecorder } from "../lib/useRecorder.ts";
 
 const MAX_CHARS = 60_000;
 
@@ -63,7 +63,7 @@ export function ChatView({
     },
     (message) => setError({ message, request: { text: "" } }),
   );
-  const busy = Boolean(pending) || transcribing || recorder.recording;
+  const busy = Boolean(pending) || transcribing || recorder.recording || recorder.requesting;
 
   useEffect(() => {
     if (!chatId) return;
@@ -255,7 +255,7 @@ export function ChatView({
             }
             disabled={busy}
           />
-          {recordingSupported() && !draft.trim() ? (
+          {!draft.trim() ? (
             recorder.recording ? (
               <button className="send-btn send-btn--rec" type="button" onClick={recorder.stop} aria-label="Остановить запись и отправить">
                 <Square size={16} fill="currentColor" />
@@ -265,7 +265,7 @@ export function ChatView({
                 className="icon-btn mic-btn"
                 type="button"
                 onClick={recorder.start}
-                disabled={Boolean(pending) || transcribing}
+                disabled={Boolean(pending) || transcribing || recorder.requesting}
                 aria-label="Голосовое сообщение"
                 title="Голосовое сообщение"
               >
@@ -279,9 +279,15 @@ export function ChatView({
           )}
         </div>
         <p className="composer-hint">
-          {recorder.recording ? (
+          {recorder.requesting ? (
+            <span className="rec-hint rec-hint--wait">Разрешите доступ к микрофону в окне браузера (обычно слева вверху, у адресной строки)…</span>
+          ) : recorder.recording ? (
             <span className="rec-hint">
               <span className="rec-dot" /> Запись {formatTimer(recorder.seconds)}
+              <span className="level" aria-label="Уровень звука">
+                <span className="level__bar" style={{ width: `${Math.round(recorder.level * 100)}%` }} />
+              </span>
+              {recorder.silent && <span className="rec-silent">Не слышу звук — проверьте, какой микрофон выбран в системе</span>}
             </span>
           ) : (
             "Нажмите микрофон, чтобы говорить. Расшифровку с репликами «Имя: …» ассистент разберёт как встречу."
