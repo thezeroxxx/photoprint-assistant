@@ -23,8 +23,12 @@ const app = createApp({
   staticDir: "dist/client",
 });
 
-const server = app.listen(config.port, "0.0.0.0", () => {
-  console.log(`Photoprint Assistant API on http://localhost:${config.port}  (model: ${config.model})`);
+// Listens on 127.0.0.1 by default. Set HOST=0.0.0.0 in .env to allow other devices
+// on the network (e.g. a phone for the demo) — the API has no login, so only on a trusted network.
+const server = app.listen(config.port, config.host, () => {
+  console.log(`Photoprint Assistant API on http://${config.host}:${config.port}  (model: ${config.model})`);
+  if (config.host !== "127.0.0.1" && config.host !== "localhost")
+    console.warn(`Listening on ${config.host}: the API is reachable from other devices on this network.`);
   if (!config.apiKey) console.warn("OPENROUTER_API_KEY is not set: analysis requests will return 503.");
 });
 

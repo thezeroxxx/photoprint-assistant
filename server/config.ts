@@ -20,6 +20,7 @@ const ConfigSchema = z.object({
   MIN_TRANSCRIPT_CHARS: z.coerce.number().int().nonnegative().default(50),
   MAX_TRANSCRIPT_CHARS: z.coerce.number().int().positive().default(60_000),
   PORT: z.coerce.number().int().positive().default(3000),
+  HOST: z.string().trim().min(1).default("127.0.0.1"),
   DB_PATH: z.string().trim().min(1).default("data/app.db"),
 });
 
@@ -38,6 +39,7 @@ export const config = {
   minTranscriptChars: parsed.MIN_TRANSCRIPT_CHARS,
   maxTranscriptChars: parsed.MAX_TRANSCRIPT_CHARS,
   port: parsed.PORT,
+  host: parsed.HOST,
   dbPath: parsed.DB_PATH,
 } as const;
 

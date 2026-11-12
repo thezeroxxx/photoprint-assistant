@@ -6,7 +6,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
-import type { ApiError } from "../shared/report.ts";
+import type { ApiError, ReportDetail } from "../shared/report.ts";
 import { analyzeMeeting } from "./analysis/analyzeMeeting.ts";
 import { LlmError, type LlmClient } from "./llm/types.ts";
 import type { Repository } from "./storage/repository.ts";
@@ -21,6 +21,9 @@ export interface AppDeps {
 }
 
 const RECENT_LIMIT = 10;
+
+/** Raw technical error text stays in the database and server log; it is never sent to the browser. */
+const toPublic = (detail: ReportDetail): ReportDetail => ({ ...detail, errorMessage: null });
 
 function sendError(res: Response, status: number, code: string, message: string) {
   const body: ApiError = { error: { code, message } };
@@ -101,7 +104,7 @@ export function createApp(deps: AppDeps) {
         `[analysis] ok model=${result.model} attempts=${result.attempts} tokens=${result.usage.totalTokens ?? "?"} ` +
           `cost=${result.usage.costUsd ?? "?"} ms=${result.durationMs}`,
       );
-      return res.status(201).json(detail);
+      return res.status(201).json(toPublic(detail));
     } catch (err) {
       const llmErr = err instanceof LlmError ? err : null;
       const mapped = llmErr
@@ -130,7 +133,7 @@ export function createApp(deps: AppDeps) {
   app.get("/api/analyses/:id", (req, res) => {
     const detail = repo.getReport(req.params.id);
     if (!detail) return sendError(res, 404, "not_found", "Отчёт не найден.");
-    res.json(detail);
+    res.json(toPublic(detail));
   });
 
   app.use("/api", (_req, res) => sendError(res, 404, "not_found", "Не найдено."));

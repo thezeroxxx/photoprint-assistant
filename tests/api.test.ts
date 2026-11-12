@@ -63,6 +63,12 @@ test("provider auth failure returns 502 and is stored as failed", async () => {
   const list = (await (await fetch(`${base}/api/analyses`)).json()) as ReportSummary[];
   assert.equal(list.length, 2);
   assert.equal(list[0]?.status, "failed");
+
+  // The raw upstream error is stored, but never returned to the browser.
+  const failed = (await (await fetch(`${base}/api/analyses/${list[0]?.id}`)).json()) as ReportDetail;
+  assert.equal(failed.status, "failed");
+  assert.equal(failed.errorMessage, null);
+  assert.equal(repo.getReport(list[0]!.id)?.errorMessage, "boom");
   assert.equal(list[0]?.counts, null);
   assert.deepEqual(list[1]?.counts, { decisions: 1, commitments: 2, clarifications: 1, openQuestions: 0 });
 });
