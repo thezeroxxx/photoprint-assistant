@@ -84,7 +84,6 @@ The business logic depends only on interfaces, so providers and storage can be r
 .
 ├── PROJECT_BRIEF.md          Business requirements (source of truth)
 ├── docs/product-vision.md    Approved product vision
-├── CLAUDE.md                 Instructions for AI coding agents
 └── app/
     ├── client/src/           React UI: views/ (chat, meetings, report, tasks), components/, lib/, styles/
     ├── server/
