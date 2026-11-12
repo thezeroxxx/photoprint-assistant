@@ -4,6 +4,7 @@
 import { createApp } from "./app.ts";
 import { config } from "./config.ts";
 import { OpenRouterClient } from "./llm/openrouter.ts";
+import { OpenRouterSpeechToText } from "./stt/openrouter.ts";
 import { SqliteRepository } from "./storage/sqlite.ts";
 
 const repo = new SqliteRepository(config.dbPath);
@@ -16,9 +17,18 @@ const llm = new OpenRouterClient({
   temperature: config.temperature,
 });
 
+const stt = new OpenRouterSpeechToText({
+  apiKey: config.apiKey,
+  model: config.sttModel,
+  language: config.sttLanguage,
+  timeoutMs: config.llmTimeoutMs,
+});
+
 const app = createApp({
   repo,
   llm,
+  stt,
+  maxAudioMb: config.maxAudioMb,
   limits: { minTranscriptChars: config.minTranscriptChars, maxTranscriptChars: config.maxTranscriptChars },
   staticDir: "dist/client",
 });

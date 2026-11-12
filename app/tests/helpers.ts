@@ -61,3 +61,19 @@ export function validModelReport(overrides: Partial<ModelReport> = {}): ModelRep
     ...overrides,
   };
 }
+
+/** Fake speech-to-text: returns queued texts (or throws queued errors). */
+export class FakeStt {
+  readonly model = "fake/whisper";
+  calls: { bytes: number; format: string }[] = [];
+  private readonly queue: (string | Error)[];
+  constructor(...queue: (string | Error)[]) {
+    this.queue = queue;
+  }
+  async transcribe(audio: Buffer, format: string) {
+    this.calls.push({ bytes: audio.length, format });
+    const next = this.queue.shift() ?? "";
+    if (next instanceof Error) throw next;
+    return { text: next, model: this.model, durationMs: 5 };
+  }
+}

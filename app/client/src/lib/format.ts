@@ -41,3 +41,11 @@ export const formatCost = (usd: number | null) =>
 
 export const formatSeconds = (ms: number | null) =>
   ms === null ? "—" : `${(ms / 1000).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} с`;
+
+const dayMonth = new Intl.DateTimeFormat("ru-RU", { weekday: "short", day: "numeric", month: "long" });
+
+/** "пт, 13 ноября" from "2026-11-13". */
+export const formatDay = (isoDay: string) => dayMonth.format(new Date(`${isoDay}T00:00`));
+
+/** "пт, 13 ноября, 09:00" from "2026-11-13T09:00" (local time). */
+export const formatReminder = (local: string) => `${dayMonth.format(new Date(local))}, ${local.slice(11, 16)}`;

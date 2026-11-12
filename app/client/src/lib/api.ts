@@ -1,4 +1,6 @@
+import type { ChatDetail, ChatSummary, SendMessageRequest, SendMessageResponse } from "../../../shared/chat.ts";
 import type { ApiError, ReportDetail, ReportSummary } from "../../../shared/report.ts";
+import type { MeetingCommitment, Task, UpdateTaskRequest } from "../../../shared/tasks.ts";
 
 export class ApiRequestError extends Error {
   readonly code: string;
@@ -32,6 +34,29 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ transcript, title: title.trim() || undefined }),
     }),
-  recent: () => request<ReportSummary[]>("/api/analyses"),
+  recent: (limit = 10) => request<ReportSummary[]>(`/api/analyses?limit=${limit}`),
   report: (id: string) => request<ReportDetail>(`/api/analyses/${encodeURIComponent(id)}`),
+  /** Sends a voice recording to Whisper (via the server) and returns the recognized text. */
+  transcribe: (audio: Blob) =>
+    request<{ text: string }>("/api/transcribe", {
+      method: "POST",
+      headers: { "Content-Type": audio.type || "audio/webm" },
+      body: audio,
+    }),
+  chats: () => request<ChatSummary[]>("/api/chats"),
+  tasks: () => request<Task[]>("/api/tasks"),
+  updateTask: (id: string, patch: UpdateTaskRequest) =>
+    request<Task>(`/api/tasks/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }),
+  commitments: () => request<MeetingCommitment[]>("/api/commitments"),
+  chat: (id: string) => request<ChatDetail>(`/api/chats/${encodeURIComponent(id)}`),
+  send: (body: SendMessageRequest) =>
+    request<SendMessageResponse>("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
 };

@@ -7,7 +7,7 @@ import { createApp } from "../server/app.ts";
 import { LlmError } from "../server/llm/types.ts";
 import { sanitizeJsonSchema } from "../server/llm/openrouter.ts";
 import { SqliteRepository } from "../server/storage/sqlite.ts";
-import { FakeLlm, TRANSCRIPT, validModelReport } from "./helpers.ts";
+import { FakeLlm, FakeStt, TRANSCRIPT, validModelReport } from "./helpers.ts";
 
 const repo = new SqliteRepository(":memory:");
 const llm = new FakeLlm(validModelReport(), new LlmError("upstream", "boom", 401));
@@ -15,7 +15,7 @@ let server: Server;
 let base = "";
 
 before(async () => {
-  const app = createApp({ repo, llm, limits: { minTranscriptChars: 50, maxTranscriptChars: 5000 }, log: () => {} });
+  const app = createApp({ repo, llm, stt: new FakeStt(), limits: { minTranscriptChars: 50, maxTranscriptChars: 5000 }, log: () => {} });
   server = app.listen(0);
   await new Promise((r) => server.once("listening", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

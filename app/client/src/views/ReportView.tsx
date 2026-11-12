@@ -7,8 +7,8 @@ import {
   CircleCheckBig,
   CircleHelp,
   Copy,
-  Cpu,
   Handshake,
+  Info,
   MessagesSquare,
   Quote,
   Sparkles,
@@ -19,71 +19,49 @@ import type { ClarificationItem, Commitment, EvidenceStatus, MeetingReport, Repo
 import { api, ApiRequestError } from "../lib/api.ts";
 import { formatCost, formatDateTime, formatSeconds } from "../lib/format.ts";
 import { MISSING_LABELS, NO_DEADLINE, reportToText } from "../lib/reportText.ts";
-import { GlassIcon, StatusBadge, type Tone } from "../components/ui.tsx";
+import { StatusBadge } from "../components/ui.tsx";
 
-export function ReportView({ id, initial, onBack }: { id: string; initial: ReportDetail | null; onBack: () => void }) {
-  const [detail, setDetail] = useState<ReportDetail | null>(initial);
+export function ReportView({ id, onBack }: { id: string; onBack: () => void }) {
+  const [detail, setDetail] = useState<ReportDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initial?.id === id) return;
     setDetail(null);
     setError(null);
     api
       .report(id)
       .then(setDetail)
       .catch((err) => setError(err instanceof ApiRequestError ? err.message : "Не удалось загрузить отчёт."));
-  }, [id, initial]);
+  }, [id]);
 
   return (
-    <div className="report">
+    <div className="page">
       <button className="back" onClick={onBack}>
-        <ArrowLeft size={18} /> Все отчёты
+        <ArrowLeft size={18} /> Встречи
       </button>
       {error ? (
-        <div className="card card--solid notice notice--error" role="alert">
+        <div className="notice notice--error" role="alert">
           <TriangleAlert size={18} /> {error}
         </div>
       ) : !detail ? (
-        <ReportSkeleton />
+        <div aria-busy="true" aria-label="Загрузка отчёта">
+          <span className="sk sk--title" />
+          <span className="sk sk--line" />
+          <span className="sk sk--line" />
+          <span className="sk sk--line short" />
+          <span className="sk sk--block" />
+        </div>
       ) : detail.status === "failed" || !detail.report ? (
-        <FailedReport detail={detail} />
+        <>
+          <ReportHeader detail={detail} report={null} />
+          <div className="notice notice--error">
+            <TriangleAlert size={18} /> Анализ этой встречи не удался. Отправьте расшифровку в чат ещё раз.
+          </div>
+        </>
       ) : (
         <ReportBody detail={detail} report={detail.report} />
       )}
     </div>
-  );
-}
-
-function ReportSkeleton() {
-  return (
-    <div className="report-grid" aria-busy="true" aria-label="Загрузка отчёта">
-      <span className="sk sk--title span-12" />
-      <div className="card card--solid span-8">
-        <span className="sk sk--line" />
-        <span className="sk sk--line" />
-        <span className="sk sk--line short" />
-      </div>
-      <div className="card card--solid span-4">
-        <span className="sk sk--line" />
-        <span className="sk sk--line short" />
-      </div>
-      <div className="card card--solid span-12">
-        <span className="sk sk--block" />
-        <span className="sk sk--block" />
-      </div>
-    </div>
-  );
-}
-
-function FailedReport({ detail }: { detail: ReportDetail }) {
-  return (
-    <>
-      <ReportHeader detail={detail} report={null} />
-      <div className="card card--solid notice notice--error">
-        <TriangleAlert size={18} /> Анализ этой встречи не удался. Попробуйте запустить его заново на главной странице.
-      </div>
-    </>
   );
 }
 
@@ -111,116 +89,95 @@ function ReportBody({ detail, report }: { detail: ReportDetail; report: MeetingR
     <>
       <ReportHeader detail={detail} report={report} />
 
-      <nav className="section-nav glass-bar" aria-label="Разделы отчёта">
+      <nav className="section-nav" aria-label="Разделы отчёта">
         {chips.map((c) => (
-          <a key={c.id} href={`#${c.id}`} className="chip chip--nav" onClick={(e) => scrollToSection(e, c.id)}>
+          <a key={c.id} href={`#${c.id}`} onClick={(e) => scrollToSection(e, c.id)}>
             {c.label}
-            {c.count !== undefined && <span className="chip__count">{c.count}</span>}
+            {c.count !== undefined && <span className="count">{c.count}</span>}
           </a>
         ))}
       </nav>
 
-      <div className="report-grid">
-        {/* 1. Meeting Summary */}
-        <Section id={SECTIONS.summary} n={1} title="Резюме встречи" icon={AlignLeft} className="span-8">
-          <p className="summary">{report.summary}</p>
-        </Section>
+      {/* 1. Meeting Summary */}
+      <Section id={SECTIONS.summary} title="Резюме встречи" icon={AlignLeft}>
+        <p className="summary">{report.summary}</p>
+      </Section>
 
-        {/* 2. Key Decisions */}
-        <Section id={SECTIONS.decisions} n={2} title="Ключевые решения" icon={CircleCheckBig} count={report.decisions.length} className="span-4">
-          {report.decisions.length ? (
-            <ul className="bullets bullets--check">
-              {report.decisions.map((d, i) => (
-                <li key={i}>{d.text}</li>
-              ))}
-            </ul>
-          ) : (
-            <Empty>Явных решений на встрече не принято.</Empty>
-          )}
-        </Section>
-
-        {/* 3. Confirmed Commitments */}
-        <Section
-          id={SECTIONS.commitments}
-          n={3}
-          title="Подтверждённые обязательства"
-          icon={Handshake}
-          tone="mint"
-          count={report.commitments.length}
-          className="span-12"
-        >
-          {report.commitments.length ? (
-            <div className="items">
-              {report.commitments.map((c, i) => (
-                <CommitmentCard key={i} c={c} />
-              ))}
-            </div>
-          ) : (
-            <Empty>Явно принятых обязательств не найдено.</Empty>
-          )}
-        </Section>
-
-        {/* 4. Needs Clarification — only when relevant */}
-        {hasClarify && (
-          <Section
-            id={SECTIONS.clarify}
-            n={4}
-            title="Требуют уточнения"
-            icon={CircleHelp}
-            dot
-            count={report.needs_clarification.length}
-            className="span-6"
-            note="Это не задачи: ответственный, срок или согласие не подтверждены."
-          >
-            <div className="items">
-              {report.needs_clarification.map((n, i) => (
-                <ClarificationCard key={i} item={n} />
-              ))}
-            </div>
-          </Section>
+      {/* 2. Key Decisions */}
+      <Section id={SECTIONS.decisions} title="Ключевые решения" icon={CircleCheckBig}>
+        {report.decisions.length ? (
+          <ul className="bullets">
+            {report.decisions.map((d, i) => (
+              <li key={i}>{d.text}</li>
+            ))}
+          </ul>
+        ) : (
+          <Empty>Явных решений на встрече не принято.</Empty>
         )}
+      </Section>
 
-        {/* 5. Open Questions and Unresolved Issues */}
-        <Section
-          id={SECTIONS.open}
-          n={hasClarify ? 5 : 4}
-          title="Открытые вопросы"
-          icon={MessagesSquare}
-          count={report.open_questions.length}
-          className={hasClarify ? "span-6" : "span-12"}
-        >
-          {report.open_questions.length ? (
-            <ul className="bullets">
-              {report.open_questions.map((q, i) => (
-                <li key={i}>{q.text}</li>
-              ))}
-            </ul>
-          ) : (
-            <Empty>Нерешённых вопросов не осталось.</Empty>
-          )}
-        </Section>
+      {/* 3. Confirmed Commitments */}
+      <Section id={SECTIONS.commitments} title="Подтверждённые обязательства" icon={Handshake} tone="ok">
+        {report.commitments.length ? (
+          <div className="items">
+            {report.commitments.map((c, i) => (
+              <CommitmentItem key={i} c={c} />
+            ))}
+          </div>
+        ) : (
+          <Empty>Явно принятых обязательств не найдено.</Empty>
+        )}
+      </Section>
 
-        {/* 6. Suggested Next Steps — AI recommendations, never tasks */}
+      {/* 4. Needs Clarification — only when relevant */}
+      {hasClarify && (
         <Section
-          id={SECTIONS.next}
-          n={hasClarify ? 6 : 5}
-          title="Предлагаемые шаги"
-          icon={Sparkles}
-          tone="lavender"
-          className="span-12 section--ai"
-          note="Предложение ИИ · не является поручением"
+          id={SECTIONS.clarify}
+          title="Требуют уточнения"
+          icon={CircleHelp}
+          tone="warn"
+          note="Это не задачи: ответственный, срок или согласие не подтверждены."
         >
-          {report.suggested_next_steps.length ? (
-            <ol className="steps">
-              {report.suggested_next_steps.map((s, i) => (
-                <li key={i}>{s.text}</li>
-              ))}
-            </ol>
-          ) : (
-            <Empty>Рекомендаций нет.</Empty>
-          )}
+          <div className="items">
+            {report.needs_clarification.map((n, i) => (
+              <ClarificationCard key={i} item={n} />
+            ))}
+          </div>
         </Section>
-      </div>
+      )}
+
+      {/* 5. Open Questions and Unresolved Issues */}
+      <Section id={SECTIONS.open} title="Открытые вопросы" icon={MessagesSquare}>
+        {report.open_questions.length ? (
+          <ul className="bullets">
+            {report.open_questions.map((q, i) => (
+              <li key={i}>{q.text}</li>
+            ))}
+          </ul>
+        ) : (
+          <Empty>Нерешённых вопросов не осталось.</Empty>
+        )}
+      </Section>
+
+      {/* 6. Suggested Next Steps — AI recommendations, never tasks */}
+      <Section
+        id={SECTIONS.next}
+        title="Предлагаемые шаги"
+        icon={Sparkles}
+        tone="ai"
+        className="section--ai"
+        note="Предложение ИИ · не является поручением"
+      >
+        {report.suggested_next_steps.length ? (
+          <ol className="steps">
+            {report.suggested_next_steps.map((s, i) => (
+              <li key={i}>{s.text}</li>
+            ))}
+          </ol>
+        ) : (
+          <Empty>Рекомендаций нет.</Empty>
+        )}
+      </Section>
 
       <TechDetails detail={detail} />
     </>
@@ -228,8 +185,7 @@ function ReportBody({ detail, report }: { detail: ReportDetail; report: MeetingR
 }
 
 function scrollToSection(e: React.MouseEvent, id: string) {
-  // Keep the hash route intact; just scroll.
-  e.preventDefault();
+  e.preventDefault(); // keep the hash route intact
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -254,12 +210,12 @@ function ReportHeader({ detail, report }: { detail: ReportDetail; report: Meetin
 
   return (
     <header className="report-head">
-      <div className="report-head__text">
-        <div className="report-head__badges">
+      <div>
+        <div className="report-head__meta">
           <StatusBadge status={detail.status} />
-          <span className="chip chip--glass">{formatDateTime(detail.createdAt)}</span>
+          <span>{formatDateTime(detail.createdAt)}</span>
         </div>
-        <h1 className="report-head__title">{detail.title}</h1>
+        <h1 className="page__title">{detail.title}</h1>
       </div>
       {report && (
         <button className="btn btn--secondary" onClick={copy}>
@@ -273,36 +229,31 @@ function ReportHeader({ detail, report }: { detail: ReportDetail; report: Meetin
 
 function Section({
   id,
-  n,
   title,
-  icon,
-  tone = "blue",
-  dot = false,
-  count,
+  icon: Icon,
+  tone,
   note,
   className = "",
   children,
 }: {
   id: string;
-  n: number;
   title: string;
   icon: LucideIcon;
-  tone?: Tone;
-  dot?: boolean;
-  count?: number;
+  tone?: "ok" | "warn" | "ai";
   note?: string;
   className?: string;
   children: ReactNode;
 }) {
   return (
-    <section id={id} className={`card card--solid section ${className}`} style={{ animationDelay: `${n * 45}ms` }}>
+    <section id={id} className={`section ${className}`}>
       <div className="section__head">
-        <GlassIcon icon={icon} tone={tone} dot={dot} />
-        <div className="section__titles">
+        <span className={`section__icon ${tone ? `section__icon--${tone}` : ""}`} aria-hidden="true">
+          <Icon size={17} strokeWidth={2.2} />
+        </span>
+        <div>
           <h2 className="section__title">{title}</h2>
           {note && <p className="section__note">{note}</p>}
         </div>
-        {count !== undefined && <span className="pill">{count}</span>}
       </div>
       {children}
     </section>
@@ -313,24 +264,19 @@ function Empty({ children }: { children: ReactNode }) {
   return <p className="empty-line">{children}</p>;
 }
 
-function CommitmentCard({ c }: { c: Commitment }) {
+function CommitmentItem({ c }: { c: Commitment }) {
   return (
-    <article className="item item--commitment">
+    <article className="item">
       <p className="item__title">{c.action}</p>
       <div className="item__chips">
-        <span className="chip chip--owner">
-          <span className="avatar" aria-hidden="true">
-            {initials(c.owner)}
-          </span>
-          {c.owner}
-        </span>
+        <span className="chip chip--owner">{c.owner}</span>
         {c.deadline ? (
           <span className="chip chip--deadline">
-            <CalendarDays size={15} /> {c.deadline}
+            <CalendarDays size={14} /> {c.deadline}
           </span>
         ) : (
           <span className="chip chip--nodeadline">
-            <CalendarDays size={15} /> {NO_DEADLINE}
+            <CalendarDays size={14} /> {NO_DEADLINE}
           </span>
         )}
       </div>
@@ -369,9 +315,7 @@ function Evidence({ quote, status }: { quote: string | null; status: EvidenceSta
     <details className="evidence">
       <summary>
         <Quote size={14} /> Цитата из расшифровки
-        <span className="evidence__ok">
-          <Check size={13} /> сверено
-        </span>
+        <span className="evidence__ok">· сверено</span>
       </summary>
       <blockquote>«{quote}»</blockquote>
     </details>
@@ -380,32 +324,20 @@ function Evidence({ quote, status }: { quote: string | null; status: EvidenceSta
 
 function TechDetails({ detail }: { detail: ReportDetail }) {
   return (
-    <details className="tech card card--glass">
+    <details className="tech">
       <summary>
-        <Cpu size={16} /> Технические детали
+        <Info size={15} /> Технические детали
       </summary>
       <dl>
         <dt>Модель</dt>
         <dd>{detail.model}</dd>
         <dt>Токены</dt>
-        <dd>
-          {detail.usage.totalTokens?.toLocaleString("ru-RU") ?? "—"}
-          {detail.usage.promptTokens !== null &&
-            ` (вход ${detail.usage.promptTokens.toLocaleString("ru-RU")}, выход ${detail.usage.completionTokens?.toLocaleString("ru-RU") ?? "—"})`}
-        </dd>
+        <dd>{detail.usage.totalTokens?.toLocaleString("ru-RU") ?? "—"}</dd>
         <dt>Стоимость</dt>
         <dd>{formatCost(detail.usage.costUsd)}</dd>
         <dt>Время анализа</dt>
         <dd>{formatSeconds(detail.durationMs)}</dd>
-        <dt>Версия промпта</dt>
-        <dd>{detail.promptVersion ?? "—"}</dd>
       </dl>
     </details>
   );
-}
-
-function initials(name: string): string {
-  const words = name.replace(/\(.*?\)/g, "").trim().split(/\s+/).filter(Boolean);
-  const letters = words.slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "");
-  return letters.join("") || "?";
 }

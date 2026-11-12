@@ -13,7 +13,7 @@ export const NO_DEADLINE = "Срок не указан";
 /** Plain-text version of the report for "Копировать отчёт". Keeps the six sections in order. */
 export function reportToText(detail: ReportDetail, report: MeetingReport): string {
   const lines: string[] = [];
-  lines.push(detail.title, formatDateTime(detail.createdAt) + " · Ожидает проверки", "");
+  lines.push(detail.title, formatDateTime(detail.createdAt) + " · Не проверено", "");
   lines.push("1. Резюме", report.summary, "");
   lines.push("2. Ключевые решения");
   lines.push(...(report.decisions.length ? report.decisions.map((d) => `• ${d.text}`) : ["— нет"]), "");

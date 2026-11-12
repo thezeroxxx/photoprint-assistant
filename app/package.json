@@ -15,7 +15,8 @@
     "start": "node dist-server/server/index.js",
     "typecheck": "tsc -p tsconfig.tools.json && tsc -p client/tsconfig.json --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "compare": "tsx scripts/compare-models.ts"
+    "compare": "tsx scripts/compare-models.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts"
   },
   "dependencies": {
     "@fontsource/manrope": "5.3.0",
